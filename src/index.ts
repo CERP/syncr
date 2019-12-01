@@ -1,7 +1,7 @@
 import sleep from './sleep'
 import { v4 } from 'uuid'
 
-type Event = "connect" | "disconnect"
+type Event = "connect" | "disconnect" | "message"
 
 export default class Syncr {
 
@@ -9,31 +9,31 @@ export default class Syncr {
 	ready: boolean;
 	ws?: WebSocket;
 	pingInterval?: number;
-	dispatch: (action: any) => void;
 	pending: Map<string, { resolve: (a: any) => any, reject: (a: any) => any }>;
 	message_timeout: number;
 
 	private onEventFunctions: Record<Event, Function[]>;
 	private onNextEventFunctions: Record<Event, Function[]>;
 
-	constructor(url: string, dispatch: (action: any) => void) {
+	constructor(url: string) {
 
 		this.url = url;
 		this.ready = false;
 		this.ws = undefined;
 		this.pingInterval = undefined;
-		this.dispatch = dispatch;
 		this.message_timeout = 10000;
 
 		this.pending = new Map(); // key: uuid, value: promise
 
 		this.onEventFunctions = {
 			'connect': [],
-			'disconnect': []
+			'disconnect': [],
+			'message': []
 		}
 		this.onNextEventFunctions = {
 			'connect': [],
-			'disconnect': []
+			'disconnect': [],
+			'message': []
 		}
 
 		this.connect();
@@ -47,20 +47,15 @@ export default class Syncr {
 			clearInterval(this.pingInterval);
 			this.pingInterval = window.setInterval(() => this.ping(), 5000)
 
-			this.onEventFunctions['connect'].forEach(f => f())
-			this.onNextEventFunctions['connect'].forEach(f => f())
-			this.onNextEventFunctions['connect'] = []
+			this.trigger('connect')
 		}
 
 		this.ws.onclose = async (e) => {
 			if (this.ready) {
 				this.pending.forEach(promise => promise.reject("disconnect"));
 
-				this.onEventFunctions['disconnect'].forEach(f => f())
-				this.onNextEventFunctions['disconnect'].forEach(f => f())
-				this.onNextEventFunctions['disconnect'] = []
+				this.trigger('disconnect', e)
 			}
-
 
 			this.cleanup();
 			await sleep(9000 * Math.random() + 1000);
@@ -91,7 +86,7 @@ export default class Syncr {
 				this.pending.delete(msg.key);
 			}
 			else {
-				this.dispatch(msg);
+				this.trigger('message', msg)
 			}
 		}
 	}
@@ -102,6 +97,13 @@ export default class Syncr {
 
 	onNext(event: Event, f: Function) {
 		this.onNextEventFunctions[event].push(f)
+	}
+
+	private trigger(event: Event, ...args: any[]) {
+		this.onEventFunctions[event].forEach(f => f(...args))
+
+		this.onNextEventFunctions[event].forEach(f => f(...args))
+		this.onNextEventFunctions[event] = []
 	}
 
 	cleanup() {

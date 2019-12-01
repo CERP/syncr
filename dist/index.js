@@ -15,21 +15,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sleep_1 = __importDefault(require("./sleep"));
 const uuid_1 = require("uuid");
 class Syncr {
-    constructor(url, dispatch) {
+    constructor(url) {
         this.url = url;
         this.ready = false;
         this.ws = undefined;
         this.pingInterval = undefined;
-        this.dispatch = dispatch;
         this.message_timeout = 10000;
         this.pending = new Map(); // key: uuid, value: promise
         this.onEventFunctions = {
             'connect': [],
-            'disconnect': []
+            'disconnect': [],
+            'message': []
         };
         this.onNextEventFunctions = {
             'connect': [],
-            'disconnect': []
+            'disconnect': [],
+            'message': []
         };
         this.connect();
     }
@@ -40,16 +41,12 @@ class Syncr {
                 this.ready = true;
                 clearInterval(this.pingInterval);
                 this.pingInterval = window.setInterval(() => this.ping(), 5000);
-                this.onEventFunctions['connect'].forEach(f => f());
-                this.onNextEventFunctions['connect'].forEach(f => f());
-                this.onNextEventFunctions['connect'] = [];
+                this.trigger('connect');
             };
             this.ws.onclose = (e) => __awaiter(this, void 0, void 0, function* () {
                 if (this.ready) {
                     this.pending.forEach(promise => promise.reject("disconnect"));
-                    this.onEventFunctions['disconnect'].forEach(f => f());
-                    this.onNextEventFunctions['disconnect'].forEach(f => f());
-                    this.onNextEventFunctions['disconnect'] = [];
+                    this.trigger('disconnect', e);
                 }
                 this.cleanup();
                 yield sleep_1.default(9000 * Math.random() + 1000);
@@ -74,7 +71,7 @@ class Syncr {
                     this.pending.delete(msg.key);
                 }
                 else {
-                    this.dispatch(msg);
+                    this.trigger('message', msg);
                 }
             };
         });
@@ -84,6 +81,11 @@ class Syncr {
     }
     onNext(event, f) {
         this.onNextEventFunctions[event].push(f);
+    }
+    trigger(event, ...args) {
+        this.onEventFunctions[event].forEach(f => f(...args));
+        this.onNextEventFunctions[event].forEach(f => f(...args));
+        this.onNextEventFunctions[event] = [];
     }
     cleanup() {
         this.ready = false;
