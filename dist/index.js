@@ -21,18 +21,25 @@ class Syncr {
         this.ws = undefined;
         this.pingInterval = undefined;
         this.message_timeout = 10000;
+        this.connection_verified = false;
         this.pending = new Map(); // key: uuid, value: promise
         this.onEventFunctions = {
             'connect': [],
             'disconnect': [],
-            'message': []
+            'message': [],
+            'verify': []
         };
         this.onNextEventFunctions = {
             'connect': [],
             'disconnect': [],
-            'message': []
+            'message': [],
+            'verify': []
         };
         this.connect();
+    }
+    verify() {
+        this.connection_verified = true;
+        this.trigger('verify');
     }
     connect() {
         return __awaiter(this, void 0, void 0, function* () {

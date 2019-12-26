@@ -1,7 +1,7 @@
 import sleep from './sleep'
 import { v4 } from 'uuid'
 
-type Event = "connect" | "disconnect" | "message"
+type Event = "connect" | "disconnect" | "message" | "verify"
 
 export default class Syncr {
 
@@ -11,6 +11,7 @@ export default class Syncr {
 	pingInterval?: number;
 	pending: Map<string, { resolve: (a: any) => any, reject: (a: any) => any }>;
 	message_timeout: number;
+	connection_verified: boolean;
 
 	private onEventFunctions: Record<Event, Function[]>;
 	private onNextEventFunctions: Record<Event, Function[]>;
@@ -22,21 +23,30 @@ export default class Syncr {
 		this.ws = undefined;
 		this.pingInterval = undefined;
 		this.message_timeout = 10000;
+		this.connection_verified = false;
 
 		this.pending = new Map(); // key: uuid, value: promise
 
 		this.onEventFunctions = {
 			'connect': [],
 			'disconnect': [],
-			'message': []
+			'message': [],
+			'verify': []
 		}
 		this.onNextEventFunctions = {
 			'connect': [],
 			'disconnect': [],
-			'message': []
+			'message': [],
+			'verify': []
 		}
 
 		this.connect();
+	}
+
+	public verify() {
+		this.connection_verified = true;
+
+		this.trigger('verify')
 	}
 
 	async connect() {
