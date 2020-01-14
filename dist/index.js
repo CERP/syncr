@@ -55,6 +55,7 @@ class Syncr {
                     this.pending.forEach(promise => promise.reject("disconnect"));
                     this.trigger('disconnect', e);
                 }
+                this.connection_verified = false;
                 this.cleanup();
                 yield sleep_1.default(9000 * Math.random() + 1000);
                 this.connect();
