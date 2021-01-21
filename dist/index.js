@@ -24,22 +24,22 @@ class Syncr {
         this.connection_verified = false;
         this.pending = new Map(); // key: uuid, value: promise
         this.onEventFunctions = {
-            'connect': [],
-            'disconnect': [],
-            'message': [],
-            'verify': []
+            connect: [],
+            disconnect: [],
+            message: [],
+            verify: [],
         };
         this.onNextEventFunctions = {
-            'connect': [],
-            'disconnect': [],
-            'message': [],
-            'verify': []
+            connect: [],
+            disconnect: [],
+            message: [],
+            verify: [],
         };
         this.connect();
     }
     verify() {
         this.connection_verified = true;
-        this.trigger('verify');
+        this.trigger("verify");
     }
     connect() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -48,20 +48,20 @@ class Syncr {
                 this.ready = true;
                 clearInterval(this.pingInterval);
                 this.pingInterval = window.setInterval(() => this.ping(), 5000);
-                this.trigger('connect');
+                this.trigger("connect");
             };
             this.ws.onclose = (e) => __awaiter(this, void 0, void 0, function* () {
                 if (this.ready) {
-                    this.pending.forEach(promise => promise.reject("disconnect"));
-                    this.trigger('disconnect', e);
+                    this.pending.forEach((promise) => promise.reject("disconnect"));
+                    this.trigger("disconnect", e);
                 }
                 this.connection_verified = false;
                 this.cleanup();
                 yield sleep_1.default(9000 * Math.random() + 1000);
                 this.connect();
             });
-            this.ws.onerror = err => { }; //console.error("websocket err", err)
-            this.ws.onmessage = event => {
+            this.ws.onerror = (err) => { }; //console.error("websocket err", err)
+            this.ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
                 console.log("<--- server", msg.type);
                 if (msg.key) {
@@ -79,7 +79,7 @@ class Syncr {
                     this.pending.delete(msg.key);
                 }
                 else {
-                    this.trigger('message', msg);
+                    this.trigger("message", msg);
                 }
             };
         });
@@ -91,8 +91,8 @@ class Syncr {
         this.onNextEventFunctions[event].push(f);
     }
     trigger(event, ...args) {
-        this.onEventFunctions[event].forEach(f => f(...args));
-        this.onNextEventFunctions[event].forEach(f => f(...args));
+        this.onEventFunctions[event].forEach((f) => f(...args));
+        this.onNextEventFunctions[event].forEach((f) => f(...args));
         this.onNextEventFunctions[event] = [];
     }
     cleanup() {
@@ -128,7 +128,7 @@ class Syncr {
                 else {
                     this.ws.send(JSON.stringify({
                         key,
-                        payload: message
+                        payload: message,
                     }));
                 }
                 setTimeout(() => {
