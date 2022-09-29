@@ -82,7 +82,7 @@ interface Syncr {
       payload: {
         initiator_id: "xxxx-xxxx"
         req_token: "xxxx-xxxx"
-        req_timeout: 5000a
+        req_timeout: 5000
       }
     })
       .then(response => {
