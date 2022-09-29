@@ -57,7 +57,7 @@ class Syncr {
                 }
                 this.connection_verified = false;
                 this.cleanup();
-                yield sleep_1.default(9000 * Math.random() + 1000);
+                yield (0, sleep_1.default)(9000 * Math.random() + 1000);
                 this.connect();
             });
             this.ws.onerror = (err) => { }; //console.error("websocket err", err)
@@ -119,7 +119,7 @@ class Syncr {
             // create promise, put in map
             // when its returned, trigger it.
             console.log("server --->", message);
-            const key = uuid_1.v4();
+            const key = (0, uuid_1.v4)();
             return new Promise((resolve, reject) => {
                 this.pending.set(key, { resolve, reject });
                 if (!this.ws) {
